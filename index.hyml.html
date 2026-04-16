@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeudaTrack — Lo que me deben</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f4f0; --surface: #ffffff; --surface2: #f0ede8;
+    --border: rgba(0,0,0,0.10); --border2: rgba(0,0,0,0.18);
+    --text: #1a1a18; --text2: #6b6b67; --text3: #9a9a96;
+    --radius: 10px; --radius-lg: 14px;
+    --red: #A32D2D; --red-bg: #FCEBEB;
+    --green: #27500A; --green-bg: #EAF3DE;
+    --blue: #0C447C; --blue-bg: #E6F1FB;
+    --amber: #633806; --amber-bg: #FAEEDA;
+    --purple: #534AB7; --purple-bg: #EEEDFE;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a18; --surface: #242422; --surface2: #2e2e2b;
+      --border: rgba(255,255,255,0.09); --border2: rgba(255,255,255,0.16);
+      --text: #f0ede8; --text2: #a0a09c; --text3: #6b6b67;
+      --red: #F09595; --red-bg: rgba(163,45,45,0.18);
+      --green: #97C459; --green-bg: rgba(39,80,10,0.2);
+      --blue: #85B7EB; --blue-bg: rgba(12,68,124,0.2);
+      --amber: #FAC775; --amber-bg: rgba(99,56,6,0.22);
+      --purple: #AFA9EC; --purple-bg: rgba(83,74,183,0.2);
+    }
+  }
+
+  body { font-family: -apple-system,'Segoe UI',Helvetica,Arial,sans-serif; background:var(--bg); color:var(--text); font-size:15px; line-height:1.5; min-height:100vh; }
+
+  .header { background:var(--surface); border-bottom:0.5px solid var(--border); padding:0 20px; display:flex; align-items:center; justify-content:space-between; height:60px; position:sticky; top:0; z-index:5; }
+  .logo { display:flex; align-items:center; gap:10px; }
+  .logo-icon { width:36px; height:36px; }
+  .logo-text { font-size:17px; font-weight:600; letter-spacing:-0.3px; }
+  .logo-text span { color:var(--red); }
+
+  .container { max-width:680px; margin:0 auto; padding:24px 16px 80px; }
+
+  .metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:20px; }
+  @media (max-width:520px) { .metrics { grid-template-columns:repeat(2,1fr); } }
+  .metric { background:var(--surface); border:0.5px solid var(--border); border-radius:var(--radius); padding:14px; }
+  .metric-label { font-size:11px; color:var(--text2); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.4px; }
+  .metric-value { font-size:19px; font-weight:600; }
+  .metric-value.red { color:var(--red); }
+  .metric-value.green { color:var(--green); }
+
+  .toolbar { display:flex; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+  .tabs { display:flex; gap:4px; flex-wrap:wrap; flex:1; }
+  .tab { padding:6px 13px; font-size:13px; border-radius:20px; border:0.5px solid transparent; background:transparent; color:var(--text2); cursor:pointer; font-family:inherit; transition:all .12s; white-space:nowrap; }
+  .tab:hover { background:var(--surface2); color:var(--text); }
+  .tab.active { background:var(--surface); border-color:var(--border2); color:var(--text); font-weight:500; }
+
+  .btn { font-family:inherit; cursor:pointer; border-radius:var(--radius); border:0.5px solid var(--border2); background:var(--surface); color:var(--text); padding:8px 14px; font-size:14px; transition:background .12s,transform .1s; white-space:nowrap; }
+  .btn:hover { background:var(--surface2); }
+  .btn:active { transform:scale(.98); }
+  .btn-primary { background:var(--text); color:var(--bg); border-color:var(--text); font-weight:500; }
+  .btn-primary:hover { opacity:.85; background:var(--text); }
+  .btn-danger { color:var(--red); border-color:rgba(163,45,45,.3); }
+  .btn-danger:hover { background:var(--red-bg); }
+  .btn-purple { color:var(--purple); border-color:rgba(83,74,183,.3); font-weight:500; }
+  .btn-purple:hover { background:var(--purple-bg); }
+
+  .search-wrap { position:relative; margin-bottom:14px; }
+  .search-ico { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--text3); font-size:15px; pointer-events:none; }
+  .search-wrap input { padding-left:34px; }
+  input,select,textarea { font-family:inherit; font-size:14px; padding:9px 12px; border:0.5px solid var(--border2); border-radius:var(--radius); background:var(--surface); color:var(--text); width:100%; outline:none; transition:border-color .15s,box-shadow .15s; }
+  input:focus,select:focus,textarea:focus { border-color:rgba(0,0,0,.35); box-shadow:0 0 0 3px rgba(0,0,0,.06); }
+  @media (prefers-color-scheme:dark) { input:focus,select:focus,textarea:focus { border-color:rgba(255,255,255,.3); box-shadow:0 0 0 3px rgba(255,255,255,.06); } }
+  textarea { resize:vertical; min-height:65px; line-height:1.5; }
+  label { font-size:12px; color:var(--text2); display:block; margin-bottom:4px; font-weight:500; letter-spacing:.2px; }
+
+  .pill { display:inline-block; font-size:11px; padding:2px 8px; border-radius:20px; font-weight:600; }
+  .pill-pending { background:var(--amber-bg); color:var(--amber); }
+  .pill-partial  { background:var(--blue-bg);  color:var(--blue);  }
+  .pill-paid     { background:var(--green-bg); color:var(--green); }
+  .pill-overdue  { background:var(--red-bg);   color:var(--red);   }
+
+  .debt-card { background:var(--surface); border:0.5px solid var(--border); border-radius:var(--radius-lg); padding:14px 16px; margin-bottom:10px; cursor:pointer; transition:border-color .12s,box-shadow .12s; }
+  .debt-card:hover { border-color:var(--border2); box-shadow:0 2px 12px rgba(0,0,0,.06); }
+  .avatar { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:13px; flex-shrink:0; }
+  .row { display:flex; align-items:center; gap:10px; }
+  .progress-bar { height:4px; border-radius:2px; background:var(--surface2); margin-top:10px; overflow:hidden; }
+  .progress-fill { height:100%; border-radius:2px; background:#1D9E75; transition:width .4s; }
+  .divider { height:0.5px; background:var(--border); margin:12px 0; }
+  .empty { text-align:center; padding:60px 20px; color:var(--text2); font-size:14px; background:var(--surface); border-radius:var(--radius-lg); border:0.5px solid var(--border); }
+
+  .overlay { position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:flex-start; justify-content:center; padding:50px 16px 24px; z-index:100; overflow-y:auto; }
+  .modal { background:var(--surface); border-radius:var(--radius-lg); border:0.5px solid var(--border2); padding:22px; width:100%; max-width:480px; flex-shrink:0; }
+  .modal-title { font-size:16px; font-weight:600; }
+  .field-group { display:grid; gap:12px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media (max-width:400px) { .grid2 { grid-template-columns:1fr; } }
+
+  .quick-btns { display:flex; gap:6px; flex-wrap:wrap; margin:8px 0; }
+  .quick-btn { flex:1; min-width:44px; font-size:12px; padding:6px 8px; border-radius:var(--radius); border:0.5px solid var(--border2); background:var(--surface2); color:var(--text); cursor:pointer; font-family:inherit; transition:background .1s; text-align:center; }
+  .quick-btn:hover { background:var(--border); }
+  .quick-btn.todo { color:var(--green); border-color:rgba(39,80,10,.3); }
+
+  /* Selector de tipo de adicion */
+  .option-cards { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:14px 0 4px; }
+  .option-card { border:1.5px solid var(--border2); border-radius:var(--radius-lg); padding:16px 14px; cursor:pointer; background:var(--surface); transition:border-color .15s,background .12s; text-align:center; }
+  .option-card:hover { background:var(--surface2); }
+  .option-card.selected { border-color:var(--purple); background:var(--purple-bg); }
+  .option-card-ico { font-size:26px; margin-bottom:6px; }
+  .option-card-title { font-size:13px; font-weight:600; margin-bottom:3px; }
+  .option-card-desc { font-size:11px; color:var(--text2); line-height:1.4; }
+
+  .pay-item { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:0.5px solid var(--border); font-size:13px; }
+  .pay-item:last-child { border-bottom:none; }
+  .add-item { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:0.5px solid var(--border); font-size:13px; }
+  .add-item:last-child { border-bottom:none; }
+
+  .summary-box { background:var(--surface2); border-radius:var(--radius); padding:14px 16px; margin-bottom:14px; }
+  .multi-badge { font-size:10px; background:var(--purple-bg); color:var(--purple); border-radius:20px; padding:1px 7px; font-weight:600; }
+
+  .fab { position:fixed; bottom:24px; right:24px; width:52px; height:52px; border-radius:50%; background:var(--text); color:var(--bg); font-size:24px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(0,0,0,.22); transition:transform .12s; z-index:4; }
+  .fab:hover { transform:scale(1.07); }
+  .fab:active { transform:scale(.96); }
+
+  .sub-debt-row { display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:var(--radius); background:var(--surface2); margin-bottom:6px; cursor:pointer; transition:background .1s; }
+  .sub-debt-row:hover { background:var(--border); }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <svg class="logo-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="36" height="36" rx="9" fill="#1a1a18"/>
+      <circle cx="18" cy="16" r="8" stroke="#f0ede8" stroke-width="1.5"/>
+      <text x="18" y="20.5" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" font-weight="700" fill="#f0ede8">S/</text>
+      <path d="M24 26 L30 26 L30 30 M30 26 L25 31" stroke="#4ade80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span class="logo-text">Deuda<span>Track</span></span>
+  </div>
+  <button class="btn btn-primary" onclick="openForm()">+ Nueva deuda</button>
+</header>
+
+<div class="container">
+  <div class="metrics" id="metrics"></div>
+  <div class="toolbar"><div class="tabs" id="tabs"></div></div>
+  <div class="search-wrap">
+    <span class="search-ico">&#8981;</span>
+    <input id="search" placeholder="Buscar por nombre, descripcion o telefono..." oninput="applyFilters()">
+  </div>
+  <div id="list"></div>
+</div>
+
+<button class="fab" onclick="openForm()" title="Nueva deuda">+</button>
+<div id="modal-root"></div>
+
+<script>
+var debts = JSON.parse(localStorage.getItem('deudatrack_v3') || '[]');
+var filter = 'all';
+
+var COLORS = [
+  {bg:'#E6F1FB',fg:'#185FA5'},{bg:'#E1F5EE',fg:'#0F6E56'},
+  {bg:'#FAECE7',fg:'#993C1D'},{bg:'#FBEAF0',fg:'#993556'},
+  {bg:'#EAF3DE',fg:'#3B6D11'},{bg:'#EEEDFE',fg:'#534AB7'},
+  {bg:'#FAEEDA',fg:'#854F0B'}
+];
+
+function save() { localStorage.setItem('deudatrack_v3', JSON.stringify(debts)); }
+function today() { return new Date().toISOString().split('T')[0]; }
+function initials(n) { return n.trim().split(/\s+/).map(function(w){return w[0];}).join('').toUpperCase().slice(0,2)||'??'; }
+function colorFor(name) {
+  var h=0; for(var i=0;i<name.length;i++) h=(h*31+name.charCodeAt(i))&0xffffffff;
+  return COLORS[Math.abs(h)%COLORS.length];
+}
+function fmt(n) { return 'S/ '+Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+function fmtDate(d) { if(!d) return '—'; var p=d.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
+function esc(s) { var d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+function personKey(name) { return name.trim().toLowerCase(); }
+
+function isOverdue(d) { return d.dueDate && d.status!=='paid' && new Date(d.dueDate)<new Date(today()); }
+function statusOf(d) {
+  if(d.status==='paid') return 'paid';
+  if(isOverdue(d)) return 'overdue';
+  if(d.paid>0) return 'partial';
+  return 'pending';
+}
+var statusLabel = {paid:'Pagado',partial:'Parcial',pending:'Pendiente',overdue:'Vencido'};
+
+function renderAll() { renderMetrics(); renderTabs(); renderList(); }
+
+function renderMetrics() {
+  var total=0, totalAll=0, totalPaid=0, ov=0;
+  debts.forEach(function(d){ total+=d.total-d.paid; totalAll+=d.total; totalPaid+=d.paid; if(isOverdue(d)) ov++; });
+  document.getElementById('metrics').innerHTML =
+    '<div class="metric"><div class="metric-label">Pendiente</div><div class="metric-value red">'+fmt(total)+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Total prestado</div><div class="metric-value">'+fmt(totalAll)+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Cobrado</div><div class="metric-value green">'+fmt(totalPaid)+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Vencidos</div><div class="metric-value '+(ov>0?'red':'')+'">'+ov+'</div></div>';
+}
+
+function renderTabs() {
+  var counts={all:debts.length,pending:0,partial:0,overdue:0,paid:0};
+  debts.forEach(function(d){ var s=statusOf(d); counts[s]=(counts[s]||0)+1; });
+  var tabs=[{k:'all',l:'Todos'},{k:'pending',l:'Pendientes'},{k:'partial',l:'Parcial'},{k:'overdue',l:'Vencidos'},{k:'paid',l:'Pagados'}];
+  document.getElementById('tabs').innerHTML=tabs.map(function(t){
+    return '<button class="tab '+(filter===t.k?'active':'')+'" onclick="setFilter(\''+t.k+'\')">'+t.l+(counts[t.k]?' ('+counts[t.k]+')':'')+'</button>';
+  }).join('');
+}
+function setFilter(f){ filter=f; renderAll(); }
+
+function applyFilters() {
+  var q=document.getElementById('search').value.toLowerCase();
+  var filtered=debts.filter(function(d){
+    if(filter!=='all' && statusOf(d)!==filter) return false;
+    if(q && !d.name.toLowerCase().includes(q) && !(d.description||'').toLowerCase().includes(q) && !(d.phone||'').includes(q)) return false;
+    return true;
+  });
+  renderCards(filtered);
+}
+function renderList(){ applyFilters(); }
+
+function renderCards(list) {
+  var el=document.getElementById('list');
+  if(!list.length){
+    var q=document.getElementById('search').value;
+    el.innerHTML='<div class="empty"><div style="font-size:40px;margin-bottom:12px;">&#128203;</div>'+(q||filter!=='all'?'Sin resultados para tu busqueda.':'Aun no registraste ninguna deuda.<br><br><button class="btn btn-primary" onclick="openForm()" style="margin-top:10px;">Registrar primera deuda</button>')+'</div>';
+    return;
+  }
+  // contar cuantas deudas tiene cada persona
+  var personCount={};
+  debts.forEach(function(d){ var k=personKey(d.name); personCount[k]=(personCount[k]||0)+1; });
+
+  el.innerHTML=list.map(function(d){
+    var s=statusOf(d);
+    var remaining=d.total-d.paid;
+    var pct=Math.min(100,(d.paid/d.total)*100);
+    var col=colorFor(d.name);
+    var cnt=personCount[personKey(d.name)]||1;
+    return '<div class="debt-card" onclick="openDetail(\''+d.id+'\')">'+
+      '<div class="row" style="justify-content:space-between;align-items:flex-start;">'+
+        '<div class="row" style="gap:10px;flex:1;min-width:0;">'+
+          '<div class="avatar" style="background:'+col.bg+';color:'+col.fg+';">'+initials(d.name)+'</div>'+
+          '<div style="flex:1;min-width:0;">'+
+            '<div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:4px;">'+
+              '<div class="row" style="gap:6px;flex-wrap:wrap;">'+
+                '<span style="font-weight:600;font-size:14px;">'+esc(d.name)+'</span>'+
+                (cnt>1?'<span class="multi-badge">'+cnt+' deudas</span>':'')+
+              '</div>'+
+              '<span class="pill pill-'+s+'">'+statusLabel[s]+'</span>'+
+            '</div>'+
+            (d.description?'<div style="font-size:12px;color:var(--text2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(d.description)+'</div>':'')+
+            (d.phone?'<div style="font-size:11px;color:var(--text3);">'+esc(d.phone)+'</div>':'')+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="row" style="justify-content:space-between;margin-top:10px;align-items:flex-end;">'+
+        '<div><div style="font-size:11px;color:var(--text2);">Debe</div><div style="font-size:20px;font-weight:600;color:'+(remaining>0?'var(--red)':'var(--green)')+';">'+fmt(remaining)+'</div></div>'+
+        '<div style="text-align:right;"><div style="font-size:12px;color:var(--text2);">Total: '+fmt(d.total)+'</div>'+(d.dueDate?'<div style="font-size:11px;color:'+(isOverdue(d)?'var(--red)':'var(--text3)')+';">Vence '+fmtDate(d.dueDate)+'</div>':'')+  '</div>'+
+      '</div>'+
+      (d.paid>0?'<div class="progress-bar"><div class="progress-fill" style="width:'+pct.toFixed(1)+'%"></div></div>':'')+
+    '</div>';
+  }).join('');
+}
+
+// ─── Formulario nueva / editar ─────────────────────────────────────────────────
+function openForm(editId, prefillName, prefillPhone) {
+  var e = editId ? debts.find(function(d){return d.id===editId;}) : null;
+  var name  = e ? e.name  : (prefillName  || '');
+  var phone = e ? e.phone : (prefillPhone || '');
+  document.getElementById('modal-root').innerHTML =
+  '<div class="overlay" id="form-overlay" onclick="if(event.target.id===\'form-overlay\')closeModals()">'+
+    '<div class="modal">'+
+      '<div class="row" style="justify-content:space-between;margin-bottom:18px;">'+
+        '<span class="modal-title">'+(e?'Editar deuda':'Nueva deuda')+'</span>'+
+        '<button class="btn" onclick="closeModals()" style="padding:4px 10px;">&#10005;</button>'+
+      '</div>'+
+      '<div class="field-group">'+
+        '<div class="grid2">'+
+          '<div><label>Nombre completo *</label><input id="fn" value="'+esc(name)+'" placeholder="Juan Garcia"></div>'+
+          '<div><label>Telefono / WhatsApp</label><input id="fp" value="'+esc(phone)+'" placeholder="987 654 321"></div>'+
+        '</div>'+
+        '<div><label>Monto (S/) *</label><input id="fa" type="number" min="0.01" step="0.01" value="'+(e?e.total:'')+'" placeholder="0.00" style="font-size:20px;font-weight:600;"></div>'+
+        '<div><label>Descripcion / Motivo</label><input id="fd" value="'+esc(e?e.description:'')+'" placeholder="Por que te deben?"></div>'+
+        '<div class="grid2">'+
+          '<div><label>Fecha de prestamo</label><input type="date" id="fdt" value="'+(e?e.date:today())+'"></div>'+
+          '<div><label>Fecha de vencimiento</label><input type="date" id="fdue" value="'+(e?e.dueDate:'')+'"></div>'+
+        '</div>'+
+        '<div><label>Notas adicionales</label><textarea id="fn2" placeholder="Acuerdos, garantias, testigos...">'+(esc(e?e.notes:''))+'</textarea></div>'+
+        '<div class="row" style="justify-content:flex-end;gap:8px;margin-top:4px;">'+
+          '<button class="btn" onclick="closeModals()">Cancelar</button>'+
+          '<button class="btn btn-primary" onclick="'+(e?'saveEdit(\''+e.id+'\')':'addDebt()')+'">'+(e?'Guardar cambios':'Guardar deuda')+'</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+
+function addDebt() {
+  var name=document.getElementById('fn').value.trim();
+  var amt=parseFloat(document.getElementById('fa').value);
+  if(!name) return alert('El nombre es obligatorio.');
+  if(isNaN(amt)||amt<=0) return alert('Ingresa un monto valido mayor a 0.');
+  debts.unshift({
+    id:Date.now().toString(), name:name,
+    phone:document.getElementById('fp').value.trim(),
+    total:amt, paid:0,
+    description:document.getElementById('fd').value.trim(),
+    notes:document.getElementById('fn2').value.trim(),
+    date:document.getElementById('fdt').value,
+    dueDate:document.getElementById('fdue').value,
+    status:'pending', payments:[], additions:[]
+  });
+  save(); closeModals(); renderAll();
+}
+
+function saveEdit(id) {
+  var d=debts.find(function(x){return x.id===id;}); if(!d) return;
+  var name=document.getElementById('fn').value.trim();
+  var amt=parseFloat(document.getElementById('fa').value);
+  if(!name) return alert('El nombre es obligatorio.');
+  if(isNaN(amt)||amt<=0) return alert('Monto invalido.');
+  d.name=name; d.phone=document.getElementById('fp').value.trim();
+  d.total=amt; d.description=document.getElementById('fd').value.trim();
+  d.notes=document.getElementById('fn2').value.trim();
+  d.date=document.getElementById('fdt').value; d.dueDate=document.getElementById('fdue').value;
+  if(d.paid>=d.total) d.status='paid'; else d.status='pending';
+  save(); closeModals(); renderAll();
+}
+
+// ─── AGREGAR MAS DEUDA ────────────────────────────────────────────────────────
+function openAddDebt(id) {
+  var d=debts.find(function(x){return x.id===id;}); if(!d) return;
+  document.getElementById('modal-root').innerHTML =
+  '<div class="overlay" id="add-overlay" onclick="if(event.target.id===\'add-overlay\')closeModals()">'+
+    '<div class="modal" style="max-width:460px;">'+
+      '<div class="row" style="justify-content:space-between;margin-bottom:6px;">'+
+        '<span class="modal-title">Agregar mas deuda</span>'+
+        '<button class="btn" onclick="closeModals()" style="padding:4px 10px;">&#10005;</button>'+
+      '</div>'+
+      '<p style="font-size:13px;color:var(--text2);margin-bottom:2px;">Elige como agregar la deuda adicional de <strong>'+esc(d.name)+'</strong>:</p>'+
+
+      '<div class="option-cards">'+
+        '<div class="option-card" id="opt-sum" onclick="selectAddOpt(\'sum\')">'+
+          '<div class="option-card-ico">&#10133;</div>'+
+          '<div class="option-card-title">Sumar al total</div>'+
+          '<div class="option-card-desc">Incrementa el monto de esta misma deuda. Mismo concepto.</div>'+
+        '</div>'+
+        '<div class="option-card" id="opt-new" onclick="selectAddOpt(\'new\')">'+
+          '<div class="option-card-ico">&#128196;</div>'+
+          '<div class="option-card-title">Deuda separada</div>'+
+          '<div class="option-card-desc">Se crea como una deuda nueva e independiente con otro motivo.</div>'+
+        '</div>'+
+      '</div>'+
+
+      '<div id="panel-sum" style="display:none;">'+
+        '<div class="field-group">'+
+          '<div><label>Monto adicional (S/) *</label><input id="add-amt" type="number" min="0.01" step="0.01" placeholder="0.00" style="font-size:20px;font-weight:600;"></div>'+
+          '<div><label>Motivo del adicional</label><input id="add-desc" placeholder="Ej: nuevo prestamo, interes acumulado..."></div>'+
+          '<div style="background:var(--amber-bg);border-radius:var(--radius);padding:10px 12px;font-size:12px;color:var(--amber);">'+
+            '&#9888;&#65039; Este monto se sumara al total de la deuda existente de '+fmt(d.total)+'</div>'+
+          '<div class="row" style="justify-content:flex-end;gap:8px;">'+
+            '<button class="btn" onclick="closeModals()">Cancelar</button>'+
+            '<button class="btn btn-primary" onclick="confirmSumToTotal(\''+d.id+'\')">Sumar a deuda</button>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+
+      '<div id="panel-new" style="display:none;">'+
+        '<div style="background:var(--blue-bg);border-radius:var(--radius);padding:10px 12px;font-size:12px;color:var(--blue);margin-bottom:12px;">'+
+          '&#8505;&#65039; Se abrira el formulario con el nombre y telefono ya llenados. Solo agrega el monto y motivo de la nueva deuda independiente.</div>'+
+        '<div class="row" style="justify-content:flex-end;gap:8px;">'+
+          '<button class="btn" onclick="closeModals()">Cancelar</button>'+
+          '<button class="btn btn-primary" onclick="openNewSeparate(\''+escAttr(d.name)+'\',\''+escAttr(d.phone)+'\')">Continuar &#8594;</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+
+function escAttr(s){ return (s||'').replace(/'/g,"\\'"); }
+
+function selectAddOpt(opt) {
+  document.getElementById('opt-sum').classList.toggle('selected', opt==='sum');
+  document.getElementById('opt-new').classList.toggle('selected', opt==='new');
+  document.getElementById('panel-sum').style.display = opt==='sum'?'block':'none';
+  document.getElementById('panel-new').style.display = opt==='new'?'block':'none';
+}
+
+function confirmSumToTotal(id) {
+  var d=debts.find(function(x){return x.id===id;}); if(!d) return;
+  var amt=parseFloat(document.getElementById('add-amt').value);
+  if(isNaN(amt)||amt<=0) return alert('Ingresa un monto adicional valido.');
+  var desc=document.getElementById('add-desc').value.trim();
+  if(!d.additions) d.additions=[];
+  d.additions.push({date:today(), amount:amt, description:desc||'Monto adicional'});
+  d.total+=amt;
+  if(d.status==='paid') d.status='pending';
+  save(); closeModals(); renderAll();
+}
+
+function openNewSeparate(name, phone) {
+  closeModals();
+  openForm(null, name, phone);
+}
+
+// ─── Detalle ──────────────────────────────────────────────────────────────────
+function openDetail(id) {
+  var d=debts.find(function(x){return x.id===id;}); if(!d) return;
+  var s=statusOf(d);
+  var remaining=d.total-d.paid;
+  var pct=Math.min(100,(d.paid/d.total)*100);
+  var col=colorFor(d.name);
+  var additions=d.additions||[];
+  var otherDebts=debts.filter(function(x){return personKey(x.name)===personKey(d.name) && x.id!==d.id;});
+  var totalPersonPending=debts.filter(function(x){return personKey(x.name)===personKey(d.name);}).reduce(function(a,x){return a+(x.total-x.paid);},0);
+
+  var additionsHTML='';
+  if(additions.length){
+    additionsHTML='<div class="divider"></div>'+
+      '<div style="font-size:13px;font-weight:600;margin-bottom:8px;">Montos adicionales sumados</div>'+
+      additions.map(function(a){
+        return '<div class="add-item">'+
+          '<div><span style="color:var(--text2);font-size:12px;">'+fmtDate(a.date)+'</span> <span style="margin-left:6px;">'+esc(a.description)+'</span></div>'+
+          '<span style="color:var(--purple);font-weight:600;">+'+fmt(a.amount)+'</span>'+
+        '</div>';
+      }).join('');
+  }
+
+  var paymentsHTML='';
+  if(d.payments.length){
+    paymentsHTML='<div class="divider"></div>'+
+      '<div style="font-size:13px;font-weight:600;margin-bottom:8px;">Pagos recibidos</div>'+
+      d.payments.map(function(p){
+        return '<div class="pay-item"><span style="color:var(--text2);">'+fmtDate(p.date)+'</span><span style="color:var(--green);font-weight:600;">+'+fmt(p.amount)+'</span></div>';
+      }).join('');
+  }
+
+  var otherHTML='';
+  if(otherDebts.length){
+    otherHTML='<div class="divider"></div>'+
+      '<div style="font-size:13px;font-weight:600;margin-bottom:8px;">Otras deudas de '+esc(d.name)+'</div>'+
+      otherDebts.map(function(o){
+        var os=statusOf(o);
+        var or2=o.total-o.paid;
+        return '<div class="sub-debt-row" onclick="closeModals();setTimeout(function(){openDetail(\''+o.id+'\');},80);">'+
+          '<div>'+
+            '<div style="font-size:13px;font-weight:500;">'+(esc(o.description)||'Sin descripcion')+'</div>'+
+            '<div style="font-size:11px;color:var(--text2);">'+fmtDate(o.date)+'</div>'+
+          '</div>'+
+          '<div style="text-align:right;">'+
+            '<div style="font-size:14px;font-weight:600;color:'+(or2>0?'var(--red)':'var(--green)')+';">'+fmt(or2)+'</div>'+
+            '<span class="pill pill-'+os+'" style="font-size:10px;">'+statusLabel[os]+'</span>'+
+          '</div>'+
+        '</div>';
+      }).join('');
+  }
+
+  document.getElementById('modal-root').innerHTML =
+  '<div class="overlay" id="det-overlay" onclick="if(event.target.id===\'det-overlay\')closeModals()">'+
+    '<div class="modal" style="max-width:480px;">'+
+      '<div class="row" style="justify-content:space-between;margin-bottom:16px;">'+
+        '<div class="row" style="gap:10px;">'+
+          '<div class="avatar" style="background:'+col.bg+';color:'+col.fg+';">'+initials(d.name)+'</div>'+
+          '<div>'+
+            '<div style="font-weight:600;font-size:15px;">'+esc(d.name)+'</div>'+
+            (d.phone?'<div style="font-size:12px;color:var(--text2);">'+esc(d.phone)+'</div>':'')+
+            (otherDebts.length?'<div style="font-size:11px;color:var(--purple);margin-top:1px;">+'+otherDebts.length+' deuda'+(otherDebts.length>1?'s':'')+' mas &mdash; Total pendiente: '+fmt(totalPersonPending)+'</div>':'')+
+          '</div>'+
+        '</div>'+
+        '<button class="btn" onclick="closeModals()" style="padding:4px 10px;">&#10005;</button>'+
+      '</div>'+
+
+      '<div class="summary-box">'+
+        '<div style="font-size:12px;color:var(--text2);margin-bottom:2px;">'+(d.description?esc(d.description):'Monto total prestado')+'</div>'+
+        '<div style="font-size:26px;font-weight:700;">'+fmt(d.total)+'</div>'+
+        (additions.length?'<div style="font-size:11px;color:var(--text2);margin-top:2px;">Monto original + '+additions.length+' adicional'+(additions.length>1?'es':'')+' sumado'+(additions.length>1?'s':'')+'</div>':'')+
+        '<div class="progress-bar" style="margin-top:10px;"><div class="progress-fill" style="width:'+pct.toFixed(1)+'%"></div></div>'+
+        '<div class="row" style="justify-content:space-between;margin-top:6px;font-size:12px;color:var(--text2);">'+
+          '<span>Pagado: <strong>'+fmt(d.paid)+'</strong></span>'+
+          '<span>Pendiente: <strong style="color:'+(remaining>0?'var(--red)':'var(--green)')+';">'+fmt(remaining)+'</strong></span>'+
+        '</div>'+
+      '</div>'+
+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;margin-bottom:12px;">'+
+        '<div><span style="color:var(--text2);">Estado: </span><span class="pill pill-'+s+'">'+statusLabel[s]+'</span></div>'+
+        '<div><span style="color:var(--text2);">Fecha: </span>'+fmtDate(d.date)+'</div>'+
+        (d.dueDate?'<div><span style="color:var(--text2);">Vencimiento: </span><span style="color:'+(isOverdue(d)?'var(--red)':'inherit')+'">'+fmtDate(d.dueDate)+'</span></div>':'')+
+        (d.notes?'<div style="grid-column:1/-1;border-top:0.5px solid var(--border);padding-top:8px;"><span style="color:var(--text2);">Notas: </span>'+esc(d.notes)+'</div>':'')+
+      '</div>'+
+
+      additionsHTML+
+      paymentsHTML+
+      otherHTML+
+
+      '<div class="row" style="justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap;">'+
+        '<button class="btn btn-danger" onclick="deletDebt(\''+d.id+'\')">Eliminar</button>'+
+        '<button class="btn" onclick="openForm(\''+d.id+'\')">Editar</button>'+
+        '<button class="btn btn-purple" onclick="openAddDebt(\''+d.id+'\')">+ Agregar deuda</button>'+
+        (remaining>0?'<button class="btn" onclick="openPayment(\''+d.id+'\')">Registrar pago</button>':'')+
+        (remaining>0?'<button class="btn btn-primary" onclick="markPaid(\''+d.id+'\')">Marcar pagado</button>':'')+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+
+// ─── Pago ─────────────────────────────────────────────────────────────────────
+function openPayment(id) {
+  var d=debts.find(function(x){return x.id===id;}); if(!d) return;
+  var remaining=d.total-d.paid;
+  document.getElementById('modal-root').innerHTML =
+  '<div class="overlay" id="pay-overlay" onclick="if(event.target.id===\'pay-overlay\')closeModals()">'+
+    '<div class="modal" style="max-width:380px;">'+
+      '<div class="row" style="justify-content:space-between;margin-bottom:14px;">'+
+        '<span class="modal-title">Registrar pago</span>'+
+        '<button class="btn" onclick="closeModals()" style="padding:4px 10px;">&#10005;</button>'+
+      '</div>'+
+      '<p style="font-size:13px;color:var(--text2);margin-bottom:12px;">'+esc(d.name)+' &mdash; Pendiente: <strong style="color:var(--red);">'+fmt(remaining)+'</strong></p>'+
+      '<label>Monto recibido (S/)</label>'+
+      '<input type="number" id="pay-amt" min="0.01" step="0.01" placeholder="0.00" style="font-size:20px;font-weight:600;margin-bottom:10px;">'+
+      '<div class="quick-btns">'+
+        [10,20,50,100,200,500].map(function(v){
+          return '<button class="quick-btn" onclick="setPayAmt('+Math.min(v,remaining).toFixed(2)+')">S/'+v+'</button>';
+        }).join('')+
+        '<button class="quick-btn todo" onclick="setPayAmt('+remaining.toFixed(2)+')">Todo</button>'+
+      '</div>'+
+      '<div class="row" style="justify-content:flex-end;gap:8px;margin-top:12px;">'+
+        '<button class="btn" onclick="closeModals()">Cancelar</button>'+
+        '<button class="btn btn-primary" onclick="confirmPayment(\''+d.id+'\')">Confirmar pago</button>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+
+function setPayAmt(v){ var el=document.getElementById('pay-amt'); if(el) el.value=v; }
+
+function confirmPayment(id) {
+  var d=debts.find(function(x){return x.id===id;}); if(!d) return;
+  var el=document.getElementById('pay-amt');
+  var amt=parseFloat(el?el.value:'');
+  if(isNaN(amt)||amt<=0) return alert('Ingresa un monto valido.');
+  var remaining=d.total-d.paid;
+  var actual=Math.min(amt,remaining);
+  d.paid+=actual;
+  d.payments.push({date:today(),amount:actual});
+  if(d.paid>=d.total) d.status='paid';
+  save(); closeModals(); renderAll();
+}
+
+function markPaid(id) {
+  var d=debts.find(function(x){return x.id===id;}); if(!d) return;
+  var remaining=d.total-d.paid;
+  if(remaining>0){ d.payments.push({date:today(),amount:remaining}); d.paid=d.total; }
+  d.status='paid';
+  save(); closeModals(); renderAll();
+}
+
+function deletDebt(id) {
+  if(!confirm('Eliminar esta deuda? Esta accion no se puede deshacer.')) return;
+  debts=debts.filter(function(d){return d.id!==id;});
+  save(); closeModals(); renderAll();
+}
+
+function closeModals(){ document.getElementById('modal-root').innerHTML=''; }
+
+// Migrar datos de version anterior
+var old=localStorage.getItem('deudatrack_v2');
+if(old && !debts.length){
+  try{ debts=JSON.parse(old).map(function(d){return Object.assign({additions:[]},d);}); save(); }catch(e){}
+}
+renderAll();
+</script>
+</body>
+</html>
